@@ -23,6 +23,9 @@ API_ROOT="https://api.github.com/repos/${REPOSITORY}"
 ARCHIVE_URL=""
 RESOLVED_REF_TYPE=""
 RESOLVED_COMMIT=""
+RESOLVED_COMMIT_VERIFICATION=""
+RESOLVED_COMMIT_VERIFICATION_REASON=""
+RESOLVED_COMMIT_VERIFIED_AT=""
 INSTALL_SOURCE="remote"
 INSTALL_REPOSITORY="$REPOSITORY"
 
@@ -77,8 +80,21 @@ resolve_commit_ref() {
   commit_json="$(github_api_get "commits/${ref}")" || fail "Commit '${ref}' was not found in ${REPOSITORY}."
   RESOLVED_REF_TYPE="commit"
   RESOLVED_COMMIT="$(printf '%s' "$commit_json" | json_field "data.get('sha')")"
+  RESOLVED_COMMIT_VERIFICATION="$(printf '%s' "$commit_json" | json_field "'verified' if data.get('commit', {}).get('verification', {}).get('verified') is True else ('unverified' if data.get('commit', {}).get('verification', {}).get('verified') is False else '')")"
+  RESOLVED_COMMIT_VERIFICATION_REASON="$(printf '%s' "$commit_json" | json_field "data.get('commit', {}).get('verification', {}).get('reason')")"
+  RESOLVED_COMMIT_VERIFIED_AT="$(printf '%s' "$commit_json" | json_field "data.get('commit', {}).get('verification', {}).get('verified_at')")"
   [[ -n "$RESOLVED_COMMIT" ]] || fail "Failed to resolve commit '${ref}'."
   ARCHIVE_URL="https://github.com/${REPOSITORY}/archive/${RESOLVED_COMMIT}.tar.gz"
+}
+
+resolve_commit_verification() {
+  local commit_json
+  [[ -n "$RESOLVED_COMMIT" ]] || return 0
+  [[ -n "$RESOLVED_COMMIT_VERIFICATION" ]] && return 0
+  commit_json="$(github_api_get "commits/${RESOLVED_COMMIT}")" || return 0
+  RESOLVED_COMMIT_VERIFICATION="$(printf '%s' "$commit_json" | json_field "'verified' if data.get('commit', {}).get('verification', {}).get('verified') is True else ('unverified' if data.get('commit', {}).get('verification', {}).get('verified') is False else '')")"
+  RESOLVED_COMMIT_VERIFICATION_REASON="$(printf '%s' "$commit_json" | json_field "data.get('commit', {}).get('verification', {}).get('reason')")"
+  RESOLVED_COMMIT_VERIFIED_AT="$(printf '%s' "$commit_json" | json_field "data.get('commit', {}).get('verification', {}).get('verified_at')")"
 }
 
 resolve_remote_ref() {
@@ -135,6 +151,7 @@ if [[ -n "$ARCHIVE_URL_OVERRIDE" ]]; then
   RESOLVED_COMMIT=""
 else
   resolve_remote_ref
+  resolve_commit_verification
 fi
 
 echo "Agent Governance Standard remote bootstrap" >&2
@@ -146,6 +163,15 @@ fi
 if [[ -n "$RESOLVED_COMMIT" ]]; then
   echo "- resolved commit: ${RESOLVED_COMMIT}" >&2
 fi
+if [[ -n "$RESOLVED_COMMIT_VERIFICATION" ]]; then
+  echo "- commit verification: ${RESOLVED_COMMIT_VERIFICATION}" >&2
+  if [[ -n "$RESOLVED_COMMIT_VERIFICATION_REASON" ]]; then
+    echo "- verification reason: ${RESOLVED_COMMIT_VERIFICATION_REASON}" >&2
+  fi
+  if [[ -n "$RESOLVED_COMMIT_VERIFIED_AT" ]]; then
+    echo "- verified at: ${RESOLVED_COMMIT_VERIFIED_AT}" >&2
+  fi
+fi
 echo "- archive: ${ARCHIVE_URL}" >&2
 
 TMP_DIR="$(mktemp -d)"
@@ -156,6 +182,8 @@ trap cleanup EXIT
 
 ARCHIVE_PATH="$TMP_DIR/agent-governance-standard.tar.gz"
 curl -fsSL --retry 3 --retry-delay 1 "$ARCHIVE_URL" -o "$ARCHIVE_PATH"
+ARCHIVE_SHA256="$(shasum -a 256 "$ARCHIVE_PATH" | awk '{print $1}')"
+echo "- archive sha256: ${ARCHIVE_SHA256}" >&2
 tar -xzf "$ARCHIVE_PATH" -C "$TMP_DIR"
 
 EXTRACTED_ROOT="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d -name 'agent-governance-standard-*' | head -n 1)"
@@ -170,5 +198,9 @@ AGENT_GOVERNANCE_STANDARD_INSTALL_SOURCE="$INSTALL_SOURCE" \
   AGENT_GOVERNANCE_STANDARD_INSTALL_REQUESTED_REF_TYPE="$REF_TYPE" \
   AGENT_GOVERNANCE_STANDARD_INSTALL_RESOLVED_REF_TYPE="$RESOLVED_REF_TYPE" \
   AGENT_GOVERNANCE_STANDARD_INSTALL_RESOLVED_COMMIT="$RESOLVED_COMMIT" \
+  AGENT_GOVERNANCE_STANDARD_INSTALL_RESOLVED_COMMIT_VERIFICATION="$RESOLVED_COMMIT_VERIFICATION" \
+  AGENT_GOVERNANCE_STANDARD_INSTALL_RESOLVED_COMMIT_VERIFICATION_REASON="$RESOLVED_COMMIT_VERIFICATION_REASON" \
+  AGENT_GOVERNANCE_STANDARD_INSTALL_RESOLVED_COMMIT_VERIFIED_AT="$RESOLVED_COMMIT_VERIFIED_AT" \
   AGENT_GOVERNANCE_STANDARD_INSTALL_ARCHIVE_URL="$ARCHIVE_URL" \
+  AGENT_GOVERNANCE_STANDARD_INSTALL_ARCHIVE_SHA256="$ARCHIVE_SHA256" \
   python3 "$EXTRACTED_ROOT/tools/install.py" "$@"

@@ -78,6 +78,13 @@ Remote bootstrap resolves branch/tag refs to a concrete commit before downloadin
 ~/.agent-governance-standard/install-state/last-install.json
 ```
 
+For machine-readable integrity status after install:
+
+```bash
+python3 ~/.agent-governance-standard/install.py status --json
+python3 ~/.agent-governance-standard/install.py status --project /path/to/project --json
+```
+
 ## Resulting layers
 
 ### Shared core
@@ -91,6 +98,8 @@ Remote bootstrap resolves branch/tag refs to a concrete commit before downloadin
 - `~/.claude/settings.json`
 - `~/.claude/bin/claude-governed`
 - `~/.claude/bin/claude-governance-doctor`
+- `~/.claude/bin/claude-governance-status`
+- `~/.claude/bin/claude-governance-drift`
 - `~/.claude/bin/claude-governance-uninstall`
 - project `CLAUDE.md`
 - project `.claude/settings.json`
@@ -102,6 +111,8 @@ Remote bootstrap resolves branch/tag refs to a concrete commit before downloadin
 - `~/.copilot/copilot-instructions.md`
 - `~/.copilot/bin/copilot-governed`
 - `~/.copilot/bin/copilot-governance-doctor`
+- `~/.copilot/bin/copilot-governance-status`
+- `~/.copilot/bin/copilot-governance-drift`
 - `~/.copilot/bin/copilot-governance-uninstall`
 - project `.github/copilot-instructions.md`
 - project `.github/instructions/*.instructions.md`
@@ -163,7 +174,9 @@ After installing the Claude adapter, use:
 
 ```bash
 ~/.claude/bin/claude-governed
+~/.claude/bin/claude-governance-status
 ~/.claude/bin/claude-governance-doctor
+~/.claude/bin/claude-governance-drift --project /path/to/project
 ~/.claude/bin/claude-governance-doctor --project /path/to/project
 ~/.claude/bin/claude-governance-uninstall --project /path/to/project
 /path/to/project/.claude/bin/drift-check
@@ -172,6 +185,7 @@ After installing the Claude adapter, use:
 Notes:
 
 - `claude-governed` is still the strongest entrypoint because it uses `--append-system-prompt-file`.
+- `claude-governance-status` delegates to the persisted installer status command and reports manifest/integrity drift.
 - Plain `claude` is also strengthened through `~/.claude/CLAUDE.md` and `~/.claude/settings.json`.
 - Re-running `./install.sh` acts as the upgrade path.
 
@@ -181,7 +195,9 @@ After installing the Copilot adapter, use:
 
 ```bash
 ~/.copilot/bin/copilot-governed
+~/.copilot/bin/copilot-governance-status
 ~/.copilot/bin/copilot-governance-doctor
+~/.copilot/bin/copilot-governance-drift --project /path/to/project
 ~/.copilot/bin/copilot-governance-doctor --project /path/to/project
 ~/.copilot/bin/copilot-governance-uninstall --project /path/to/project
 /path/to/project/.agent-governance/bin/drift-check
@@ -190,6 +206,7 @@ After installing the Copilot adapter, use:
 Notes:
 
 - `copilot-governed` is the strongest entrypoint because it applies an explicit tool permission baseline with `--allow-tool` and `--deny-tool`.
+- `copilot-governance-status` delegates to the persisted installer status command and reports manifest/integrity drift.
 - Copilot strongest mode relies on layered instructions plus the governed wrapper, since Copilot CLI does not expose Claude-style lifecycle hooks.
 - Re-running `./install.sh` acts as the upgrade path.
 
@@ -201,7 +218,7 @@ The repository includes install smoke coverage in:
 .github/workflows/install-smoke.yml
 ```
 
-It exercises local install, simulated remote bootstrap, adapter subsets, custom home/project paths, reinstall, doctor success, and uninstall cleanup.
+It exercises local install, simulated remote bootstrap, lightweight-tag and annotated-tag resolution, adapter subsets, custom home/project paths, reinstall, doctor success, and uninstall cleanup.
 
 ## Why “user-level top-level constraints”
 

@@ -35,6 +35,17 @@ jobs:
             transport: remote
             profile: both
             adapter_mode: explicit
+            remote_scenario: archive-override
+          - name: remote-tag-lightweight-auto
+            transport: remote
+            profile: both
+            adapter_mode: explicit
+            remote_scenario: tag-lightweight-auto
+          - name: remote-tag-annotated-explicit
+            transport: remote
+            profile: both
+            adapter_mode: explicit
+            remote_scenario: tag-annotated-explicit
 
     steps:
       - name: Check out repository
@@ -50,4 +61,5 @@ jobs:
           bash .github/scripts/ci/install-smoke.sh \
             "${{ matrix.transport }}" \
             "${{ matrix.profile }}" \
-            "${{ matrix.adapter_mode }}"
+            "${{ matrix.adapter_mode }}" \
+            "${{ matrix.remote_scenario || 'archive-override' }}"
