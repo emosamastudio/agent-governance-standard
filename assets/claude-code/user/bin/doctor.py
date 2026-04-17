@@ -95,9 +95,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def detect_home() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
 def main() -> int:
     args = parse_args()
-    home = Path(args.home).expanduser().resolve() if args.home else Path.home()
+    home = Path(args.home).expanduser().resolve() if args.home else detect_home()
     issues: list[str] = []
     check_user(home, issues)
     if args.project:

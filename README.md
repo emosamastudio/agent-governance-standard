@@ -17,13 +17,25 @@ The standard is **agent-agnostic at the core**:
 
 ## Install
 
-Install shared core + both supported adapters:
+Remote one-command install shared core + both supported adapters:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash
+```
+
+Remote one-command install and bootstrap a project:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash -s -- --project /path/to/project
+```
+
+Local install from a checked-out repository:
 
 ```bash
 ./install.sh
 ```
 
-Install and bootstrap a project:
+Local install and bootstrap a project:
 
 ```bash
 ./install.sh --project /path/to/project
@@ -34,6 +46,13 @@ Install only one adapter:
 ```bash
 ./install.sh --adapter claude-code --project /path/to/project
 ./install.sh --adapter copilot-cli --project /path/to/project
+```
+
+Pin a tag or branch during remote install:
+
+```bash
+AGENT_GOVERNANCE_STANDARD_REF=v1.0.0 \
+curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash -s -- --project /path/to/project
 ```
 
 ## Resulting layers
