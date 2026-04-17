@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "disableAllHooks": false,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session-start.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "clear|logout|other",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/prompt-submit-gate.py"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/permission-request-gate.py"
+          }
+        ]
+      }
+    ],
+    "PermissionDenied": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "matcher": "user_settings|project_settings|policy_settings",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/config-change-gate.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/completion-gate.py"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "rate_limit|authentication_failed|server_error",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/guard-tool-use.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/git-governance.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/completion-gate.py"
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/task-created-gate.py"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/completion-gate.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "FileChanged": [
+      {
+        "matcher": ".claude/settings.json|CLAUDE.md|.agent-governance/state/current-mainline.md|.agent-governance/state/delivery-intent.md|.agent-governance/state/git-workflow.md",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/compact-gate.py"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/postcompact-context.py"
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-event.py"
+          }
+        ]
+      }
+    ]
+  }
+}

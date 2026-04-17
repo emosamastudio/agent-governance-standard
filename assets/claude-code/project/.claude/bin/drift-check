@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def section_is_filled(text: str, header: str) -> bool:
+    marker = f"## {header}"
+    if marker not in text:
+        return False
+    after = text.split(marker, 1)[1].strip()
+    if not after:
+        return False
+    first = after.splitlines()[0].strip()
+    return bool(first and first != "<fill-me>")
+
+
+def main() -> int:
+    project = Path.cwd()
+    state_dir = project / ".agent-governance" / "state"
+    delivery_path = state_dir / "delivery-intent.md"
+    mainline_path = state_dir / "current-mainline.md"
+    sidelines_path = state_dir / "sidelines.md"
+    workflow_path = state_dir / "git-workflow.md"
+
+    if not delivery_path.exists():
+        print("DRIFT: missing .agent-governance/state/delivery-intent.md")
+        return 1
+    if not mainline_path.exists():
+        print("DRIFT: missing .agent-governance/state/current-mainline.md")
+        return 1
+    if not workflow_path.exists():
+        print("DRIFT: missing .agent-governance/state/git-workflow.md")
+        return 1
+
+    delivery_text = delivery_path.read_text()
+    text = mainline_path.read_text()
+    workflow_text = workflow_path.read_text()
+    delivery_missing = [
+        name
+        for name in (
+            "Mode",
+            "User Confirmation",
+            "Why This Mode Was Chosen",
+            "Planning Implication",
+            "Architecture Implication",
+            "Technology Selection Implication",
+            "Last Refreshed",
+        )
+        if not section_is_filled(delivery_text, name)
+    ]
+    missing = [
+        name
+        for name in (
+            "Objective",
+            "Current Phase",
+            "Why This Is the Mainline",
+            "Current Execution Frontier",
+            "Acceptance Criteria",
+            "Delegation Boundary",
+            "Last Refreshed",
+        )
+        if not section_is_filled(text, name)
+    ]
+    workflow_missing = [
+        name
+        for name in (
+            "Protected Branches",
+            "Active Branch",
+            "Target Integration Branch",
+            "Branch Naming Policy",
+            "Commit Message Policy",
+            "Push Policy",
+            "PR Policy",
+            "Merge Policy",
+            "Last Refreshed",
+        )
+        if not section_is_filled(workflow_text, name)
+    ]
+
+    open_sidelines = 0
+    if sidelines_path.exists():
+        open_sidelines = sum(
+            1 for line in sidelines_path.read_text().splitlines() if line.strip().startswith("- [ ]")
+        )
+
+    if delivery_missing:
+        print("DRIFT: delivery intent state is incomplete")
+        for item in delivery_missing:
+            print(f"- {item}")
+        return 1
+    if missing:
+        print("DRIFT: mainline state is incomplete")
+        for item in missing:
+            print(f"- {item}")
+        return 1
+    if workflow_missing:
+        print("DRIFT: git workflow state is incomplete")
+        for item in workflow_missing:
+            print(f"- {item}")
+        return 1
+
+    print("Delivery intent state is present and filled.")
+    print("Mainline state is present and filled.")
+    print("Git workflow state is present and filled.")
+    print(f"Open sideline items: {open_sidelines}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
