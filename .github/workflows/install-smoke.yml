@@ -1,0 +1,53 @@
+name: Install smoke tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install-smoke:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: local-both-default
+            transport: local
+            profile: both
+            adapter_mode: default
+          - name: local-claude-only
+            transport: local
+            profile: claude-only
+            adapter_mode: explicit
+          - name: local-copilot-only
+            transport: local
+            profile: copilot-only
+            adapter_mode: explicit
+          - name: remote-both-explicit
+            transport: remote
+            profile: both
+            adapter_mode: explicit
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate workflow and helper syntax
+        run: |
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/install-smoke.yml")'
+          bash -n .github/scripts/ci/install-smoke.sh
+
+      - name: Run installation smoke coverage
+        run: |
+          bash .github/scripts/ci/install-smoke.sh \
+            "${{ matrix.transport }}" \
+            "${{ matrix.profile }}" \
+            "${{ matrix.adapter_mode }}"

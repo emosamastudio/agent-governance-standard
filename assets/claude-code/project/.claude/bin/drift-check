@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -15,8 +16,7 @@ def section_is_filled(text: str, header: str) -> bool:
     return bool(first and first != "<fill-me>")
 
 
-def main() -> int:
-    project = Path.cwd()
+def fallback_check(project: Path) -> int:
     state_dir = project / ".agent-governance" / "state"
     delivery_path = state_dir / "delivery-intent.md"
     mainline_path = state_dir / "current-mainline.md"
@@ -34,7 +34,7 @@ def main() -> int:
         return 1
 
     delivery_text = delivery_path.read_text()
-    text = mainline_path.read_text()
+    mainline_text = mainline_path.read_text()
     workflow_text = workflow_path.read_text()
     delivery_missing = [
         name
@@ -49,7 +49,7 @@ def main() -> int:
         )
         if not section_is_filled(delivery_text, name)
     ]
-    missing = [
+    mainline_missing = [
         name
         for name in (
             "Objective",
@@ -60,7 +60,7 @@ def main() -> int:
             "Delegation Boundary",
             "Last Refreshed",
         )
-        if not section_is_filled(text, name)
+        if not section_is_filled(mainline_text, name)
     ]
     workflow_missing = [
         name
@@ -89,9 +89,9 @@ def main() -> int:
         for item in delivery_missing:
             print(f"- {item}")
         return 1
-    if missing:
+    if mainline_missing:
         print("DRIFT: mainline state is incomplete")
-        for item in missing:
+        for item in mainline_missing:
             print(f"- {item}")
         return 1
     if workflow_missing:
@@ -105,6 +105,15 @@ def main() -> int:
     print("Git workflow state is present and filled.")
     print(f"Open sideline items: {open_sidelines}")
     return 0
+
+
+def main() -> int:
+    project = Path.cwd()
+    shared = project / ".agent-governance" / "bin" / "drift-check"
+    if shared.exists():
+        result = subprocess.run([str(shared)], cwd=str(project), check=False)
+        return result.returncode
+    return fallback_check(project)
 
 
 if __name__ == "__main__":

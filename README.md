@@ -55,6 +55,29 @@ AGENT_GOVERNANCE_STANDARD_REF=v1.0.0 \
 curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash -s -- --project /path/to/project
 ```
 
+Pin explicitly by ref type:
+
+```bash
+AGENT_GOVERNANCE_STANDARD_REF=v1.0.0 \
+AGENT_GOVERNANCE_STANDARD_REF_TYPE=tag \
+curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash -s -- --project /path/to/project
+```
+
+Use another repository or an exact commit:
+
+```bash
+AGENT_GOVERNANCE_STANDARD_REPOSITORY=emosamastudio/agent-governance-standard \
+AGENT_GOVERNANCE_STANDARD_REF=c0020b560a9a77277522b98b2884e61e53b80302 \
+AGENT_GOVERNANCE_STANDARD_REF_TYPE=commit \
+curl -fsSL https://raw.githubusercontent.com/emosamastudio/agent-governance-standard/main/install.sh | bash
+```
+
+Remote bootstrap resolves branch/tag refs to a concrete commit before downloading the archive and records the install provenance in:
+
+```text
+~/.agent-governance-standard/install-state/last-install.json
+```
+
 ## Resulting layers
 
 ### Shared core
@@ -89,6 +112,8 @@ Both adapters point at the same project governance state:
 
 ```text
 .agent-governance/
+  bin/
+    drift-check
   rules/
   state/
     delivery-intent.md
@@ -99,6 +124,7 @@ Both adapters point at the same project governance state:
 ```
 
 This gives different runtimes one common operating model instead of duplicating project truth.
+Managed project assets upgrade on reinstall, while shared state files under `.agent-governance/state/` stay preserved.
 
 ## Governance added beyond baseline task planning
 
@@ -140,6 +166,7 @@ After installing the Claude adapter, use:
 ~/.claude/bin/claude-governance-doctor
 ~/.claude/bin/claude-governance-doctor --project /path/to/project
 ~/.claude/bin/claude-governance-uninstall --project /path/to/project
+/path/to/project/.claude/bin/drift-check
 ```
 
 Notes:
@@ -157,6 +184,7 @@ After installing the Copilot adapter, use:
 ~/.copilot/bin/copilot-governance-doctor
 ~/.copilot/bin/copilot-governance-doctor --project /path/to/project
 ~/.copilot/bin/copilot-governance-uninstall --project /path/to/project
+/path/to/project/.agent-governance/bin/drift-check
 ```
 
 Notes:
@@ -164,6 +192,16 @@ Notes:
 - `copilot-governed` is the strongest entrypoint because it applies an explicit tool permission baseline with `--allow-tool` and `--deny-tool`.
 - Copilot strongest mode relies on layered instructions plus the governed wrapper, since Copilot CLI does not expose Claude-style lifecycle hooks.
 - Re-running `./install.sh` acts as the upgrade path.
+
+## CI coverage
+
+The repository includes install smoke coverage in:
+
+```text
+.github/workflows/install-smoke.yml
+```
+
+It exercises local install, simulated remote bootstrap, adapter subsets, custom home/project paths, reinstall, doctor success, and uninstall cleanup.
 
 ## Why “user-level top-level constraints”
 

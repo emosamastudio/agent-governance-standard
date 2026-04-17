@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+REQUIRED_RULE_FILES = (
+    "00-global-governance.md",
+    "01-planning-and-parallelism.md",
+    "02-mainline-routing.md",
+    "03-lifecycle-observability.md",
+    "04-technology-research.md",
+    "05-acceptance-and-review.md",
+    "06-git-governance.md",
+    "07-hook-hardening.md",
+)
+REQUIRED_STATE_SECTIONS = {
+    "delivery-intent.md": (
+        "Mode",
+        "User Confirmation",
+        "Why This Mode Was Chosen",
+        "Planning Implication",
+        "Architecture Implication",
+        "Technology Selection Implication",
+        "Last Refreshed",
+    ),
+    "current-mainline.md": (
+        "Objective",
+        "Current Phase",
+        "Why This Is the Mainline",
+        "Current Execution Frontier",
+        "Acceptance Criteria",
+        "Delegation Boundary",
+        "Last Refreshed",
+    ),
+    "git-workflow.md": (
+        "Protected Branches",
+        "Active Branch",
+        "Target Integration Branch",
+        "Branch Naming Policy",
+        "Commit Message Policy",
+        "Push Policy",
+        "PR Policy",
+        "Merge Policy",
+        "Last Refreshed",
+    ),
+}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Check shared project governance drift.")
+    parser.add_argument("--project", help="Optional project path. Defaults to cwd.")
+    return parser.parse_args()
+
+
+def section_body(text: str, header: str) -> str | None:
+    marker = f"## {header}"
+    if marker not in text:
+        return None
+    remainder = text.split(marker, 1)[1].lstrip("\n")
+    lines: list[str] = []
+    for line in remainder.splitlines():
+        if line.startswith("## "):
+            break
+        lines.append(line)
+    return "\n".join(lines).strip()
+
+
+def section_is_filled(text: str, header: str) -> bool:
+    body = section_body(text, header)
+    if body is None:
+        return False
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        return stripped != "<fill-me>"
+    return False
+
+
+def count_open_sidelines(path: Path) -> int:
+    if not path.exists():
+        return 0
+    return sum(
+        1
+        for line in path.read_text().splitlines()
+        if line.strip().startswith("- [ ]") and "<fill-me>" not in line
+    )
+
+
+def main() -> int:
+    args = parse_args()
+    project = Path(args.project).expanduser().resolve() if args.project else Path.cwd()
+    governance_dir = project / ".agent-governance"
+    state_dir = governance_dir / "state"
+    rules_dir = governance_dir / "rules"
+    issues: list[str] = []
+
+    for name in REQUIRED_RULE_FILES:
+        path = rules_dir / name
+        if not path.exists():
+            issues.append(f"missing rule file: {path}")
+
+    for filename, sections in REQUIRED_STATE_SECTIONS.items():
+        path = state_dir / filename
+        if not path.exists():
+            issues.append(f"missing state file: {path}")
+            continue
+        text = path.read_text()
+        missing = [header for header in sections if not section_is_filled(text, header)]
+        if missing:
+            issues.append(f"incomplete {path}: {', '.join(missing)}")
+
+    if issues:
+        print("DRIFT_CHECK_FAILED")
+        for issue in issues:
+            print(f"- {issue}")
+        return 1
+
+    print("DRIFT_CHECK_OK")
+    print("Delivery intent state is present and filled.")
+    print("Mainline state is present and filled.")
+    print("Git workflow state is present and filled.")
+    print(f"Open sideline items: {count_open_sidelines(state_dir / 'sidelines.md')}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
